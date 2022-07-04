@@ -1,0 +1,7 @@
+{
+  "name": "metube",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}

@@ -1,0 +1,6 @@
+{
+	"appId": "com.husudosu.metube",
+	"appName": "metube",
+	"webDir": "dist",
+	"bundledWebRuntime": false
+}

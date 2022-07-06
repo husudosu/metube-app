@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">metube</string>
+    <string name="title_activity_main">metube</string>
+    <string name="package_name">com.husudosu.metube</string>
+    <string name="custom_url_scheme">com.husudosu.metube</string>
+</resources>

@@ -4,8 +4,8 @@
       <ion-menu content-id="main-content" type="overlay">
         <ion-content>
           <ion-list id="inbox-list">
-            <ion-list-header>Inbox</ion-list-header>
-            <ion-note>hi@ionicframework.com</ion-note>
+            <ion-list-header>Metube</ion-list-header>
+            <ion-note></ion-note>
 
             <ion-menu-toggle
               auto-hide="false"
@@ -29,23 +29,6 @@
                 <ion-label>{{ p.title }}</ion-label>
               </ion-item>
             </ion-menu-toggle>
-          </ion-list>
-
-          <ion-list id="labels-list">
-            <ion-list-header>Labels</ion-list-header>
-
-            <ion-item
-              v-for="(label, index) in labels"
-              lines="none"
-              :key="index"
-            >
-              <ion-icon
-                slot="start"
-                :ios="bookmarkOutline"
-                :md="bookmarkSharp"
-              ></ion-icon>
-              <ion-label>{{ label }}</ion-label>
-            </ion-item>
           </ion-list>
         </ion-content>
       </ion-menu>
@@ -72,20 +55,12 @@ import {
 import { defineComponent, ref } from "vue";
 import { useRoute } from "vue-router";
 import {
-  archiveOutline,
-  archiveSharp,
-  bookmarkOutline,
-  bookmarkSharp,
   heartOutline,
   heartSharp,
-  mailOutline,
-  mailSharp,
-  paperPlaneOutline,
-  paperPlaneSharp,
-  trashOutline,
-  trashSharp,
-  warningOutline,
-  warningSharp,
+  downloadOutline,
+  downloadSharp,
+  settingsOutline,
+  settingsSharp,
 } from "ionicons/icons";
 
 export default defineComponent({
@@ -108,49 +83,23 @@ export default defineComponent({
     const selectedIndex = ref(0);
     const appPages = [
       {
-        title: "Inbox",
-        url: "/folder/Inbox",
-        iosIcon: mailOutline,
-        mdIcon: mailSharp,
+        title: "Downloads",
+        url: "/folder/downloads",
+        iosIcon: downloadOutline,
+        mdIcon: downloadSharp,
       },
       {
-        title: "Outbox",
-        url: "/folder/Outbox",
-        iosIcon: paperPlaneOutline,
-        mdIcon: paperPlaneSharp,
+        title: "Settings",
+        url: "/folder/settings",
+        iosIcon: settingsOutline,
+        mdIcon: settingsSharp,
       },
       {
-        title: "Favorites",
-        url: "/folder/Favorites",
+        title: "About",
+        url: "/folder/about",
         iosIcon: heartOutline,
         mdIcon: heartSharp,
       },
-      {
-        title: "Archived",
-        url: "/folder/Archived",
-        iosIcon: archiveOutline,
-        mdIcon: archiveSharp,
-      },
-      {
-        title: "Trash",
-        url: "/folder/Trash",
-        iosIcon: trashOutline,
-        mdIcon: trashSharp,
-      },
-      {
-        title: "Spam",
-        url: "/folder/Spam",
-        iosIcon: warningOutline,
-        mdIcon: warningSharp,
-      },
-    ];
-    const labels = [
-      "Family",
-      "Friends",
-      "Notes",
-      "Work",
-      "Travel",
-      "Reminders",
     ];
 
     const path = window.location.pathname.split("folder/")[1];
@@ -165,21 +114,6 @@ export default defineComponent({
     return {
       selectedIndex,
       appPages,
-      labels,
-      archiveOutline,
-      archiveSharp,
-      bookmarkOutline,
-      bookmarkSharp,
-      heartOutline,
-      heartSharp,
-      mailOutline,
-      mailSharp,
-      paperPlaneOutline,
-      paperPlaneSharp,
-      trashOutline,
-      trashSharp,
-      warningOutline,
-      warningSharp,
       isSelected: (url) => (url === route.path ? "selected" : ""),
     };
   },

@@ -3,11 +3,11 @@ import { createRouter, createWebHistory } from "@ionic/vue-router";
 const routes = [
   {
     path: "",
-    redirect: "/folder/Inbox",
+    redirect: "/folder/settings",
   },
   {
-    path: "/folder/:id",
-    component: () => import("../views/FolderPage.vue"),
+    path: "/folder/settings",
+    component: () => import("../views/SettingsView.vue"),
   },
 ];
 

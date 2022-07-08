@@ -9,6 +9,10 @@ const routes = [
     path: "/folder/settings",
     component: () => import("../views/SettingsView.vue"),
   },
+  {
+    path: "/folder/downloads",
+    component: () => import("../views/DownloadsView.vue"),
+  },
 ];
 
 const router = createRouter({

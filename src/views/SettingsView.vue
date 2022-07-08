@@ -17,7 +17,7 @@
       </ion-header>
       <ion-list>
         <ion-item>
-          <ion-label position="floating">Metube server address</ion-label>
+          <ion-label position="floating">Metube server URL</ion-label>
           <ion-input
             :value="settings.serverURL"
             @ionBlur="setOption('serverURL', $event.target.value)"
@@ -78,6 +78,7 @@ import {
 } from "@ionic/vue";
 import { useStore } from "vuex";
 import { QUALITY, FORMAT } from "../properties";
+import { computed } from "@vue/runtime-core";
 export default {
   components: {
     IonPage,
@@ -113,7 +114,7 @@ export default {
     return {
       QUALITY,
       FORMAT,
-      settings: store.getters["settings/settings"],
+      settings: computed(() => store.getters["settings/settings"]),
       setOption,
     };
   },

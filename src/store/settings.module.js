@@ -21,10 +21,10 @@ export const settings = {
       return state.settings.serverURL;
     },
     defaultQuality: (state) => {
-      return state.defaultQuality;
+      return state.settings.defaultQuality;
     },
     defaultFormat: (state) => {
-      return state.defaultFormat;
+      return state.settings.defaultFormat;
     },
     settings: (state) => {
       return state.settings;
@@ -41,7 +41,7 @@ export const settings = {
       state.settings = value;
     },
     setOption: (state, value) => {
-      state[value.key] = value.value;
+      state.settings[value.key] = value.value;
     },
   },
   actions: {

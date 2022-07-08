@@ -1,7 +1,7 @@
 export const QUALITY = {
   BEST: "best",
   QHD: 1440,
-  FULLHD: 1070,
+  FULLHD: 1080,
   HD: 720,
   NTSC: 480,
 };

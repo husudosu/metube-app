@@ -23,13 +23,17 @@ import "@ionic/vue/css/display.css";
 /* Theme variables */
 import "./theme/variables.css";
 import { store } from "./store";
+import { io } from "socket.io-client";
 
 const app = createApp(App).use(IonicVue).use(router).use(store);
-
 // Load settings before mounting
 store.dispatch("settings/loadSettings").then(() => {
   // Toggle dark-mode
   if (store.getters["settings/nightmode"]) document.body.classList.add("dark");
+  // Socket IO connection
+  app.config.globalProperties.$socketIOClient = io(
+    store.getters["settings/serverURL"]
+  );
 
   router.isReady().then(() => {
     app.mount("#app");

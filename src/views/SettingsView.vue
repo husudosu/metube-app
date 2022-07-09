@@ -103,7 +103,8 @@ export default {
       store.dispatch("settings/setOption", { key, value });
       switch (key) {
         case "serverURL":
-          // TODO: Reconnect to new server on server address change.
+          // FIXME: We need better solution for reinitializing Socket.IO connection!
+          window.location.reload();
           break;
         case "nightmode":
           document.body.classList.toggle("dark", value);

@@ -66,7 +66,19 @@
       <ion-list>
         <ion-list-header>Downloading</ion-list-header>
         <ion-item v-for="item in downloadingList" :key="item.id">
-          <ion-label>{{ item.title }}</ion-label>
+          <ion-label
+            >{{ item.title }}
+            <ion-progress-bar
+              class="progress"
+              v-if="item.percent"
+              :value="item.percent / 100"
+            ></ion-progress-bar>
+            <b>ETA:</b> {{ humanReadableTime(item.eta) }} | <b>Speed:</b>
+            {{ humanReadableSpeed(item.speed) }}<br />
+            <!-- <ion-button size="small" fill="none">
+              <ion-icon :icon="trashBinSharp" slot="icon-only"></ion-icon>
+            </ion-button> -->
+          </ion-label>
         </ion-item>
         <ion-item v-if="downloadingList.length == 0">Empty</ion-item>
         <ion-list-header>Completed</ion-list-header>
@@ -110,16 +122,17 @@ import {
   IonSelectOption,
   IonList,
   IonListHeader,
+  IonProgressBar,
 } from "@ionic/vue";
-import { addSharp } from "ionicons/icons";
+import { addSharp, trashBinSharp } from "ionicons/icons";
 
 import { useStore } from "vuex";
 import { ref } from "@vue/reactivity";
 import { Http } from "@capacitor-community/http";
 
 import { QUALITY, FORMAT } from "../properties";
-import { getCurrentInstance } from "@vue/runtime-core";
-
+import { computed } from "@vue/runtime-core";
+import { humanReadableSpeed, humanReadableTime } from "../utils";
 export default {
   components: {
     IonPage,
@@ -141,18 +154,15 @@ export default {
     IonSelectOption,
     IonList,
     IonListHeader,
+    IonProgressBar,
   },
   setup() {
     const store = useStore();
-    const app = getCurrentInstance();
     // Add URL modal settings
     const isOpenModalShown = ref(false);
     const openModalURL = ref("");
     const openModalQuality = ref(store.getters["settings/defaultQuality"]);
     const openModalFormat = ref(store.getters["settings/defaultFormat"]);
-
-    const downloadingList = ref([]);
-    const completedList = ref([]);
 
     const addURL = async () => {
       isOpenModalShown.value = false;
@@ -171,56 +181,6 @@ export default {
       openModalFormat.value = store.getters["settings/defaultFormat"];
     };
 
-    // Handle Socket.IO events
-    app.appContext.config.globalProperties.$socketIOClient.on("all", (data) => {
-      const parsedData = JSON.parse(data);
-      downloadingList.value = [];
-      completedList.value = [];
-
-      // Parse downloadingList
-      parsedData[0].forEach((element) => {
-        downloadingList.value.push(element[1]);
-      });
-      // Parse completedList
-      parsedData[1].forEach((element) => {
-        completedList.value.push(element[1]);
-      });
-    });
-
-    app.appContext.config.globalProperties.$socketIOClient.on(
-      "added",
-      (data) => {
-        downloadingList.value.push(JSON.parse(data));
-      }
-    );
-
-    app.appContext.config.globalProperties.$socketIOClient.on(
-      "canceled",
-      (data) => {
-        const index = downloadingList.value.findIndex(
-          (el) => el.id === JSON.parse(data)
-        );
-        if (index > -1) {
-          downloadingList.value.splice(index, 1);
-        }
-      }
-    );
-
-    app.appContext.config.globalProperties.$socketIOClient.on(
-      "completed",
-      (data) => {
-        // Remove from downloadingList if exists
-        const parsedData = JSON.parse(data);
-        const index = downloadingList.value.findIndex(
-          (el) => el.id === parsedData.id
-        );
-        if (index > -1) {
-          downloadingList.value.splice(index, 1);
-        }
-        completedList.value.push(parsedData);
-      }
-    );
-
     return {
       addSharp,
       addURL,
@@ -230,9 +190,20 @@ export default {
       openModalFormat,
       QUALITY,
       FORMAT,
-      downloadingList,
-      completedList,
+      downloadingList: computed(() => store.getters["metube/downloadingList"]),
+      completedList: computed(() => store.getters["metube/completedList"]),
+      trashBinSharp,
+      humanReadableSpeed,
+      humanReadableTime,
     };
   },
 };
 </script>
+
+<style>
+.progress {
+  margin-top: 10px;
+  padding-top: 10px;
+  margin-bottom: 10px;
+}
+</style>

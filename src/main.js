@@ -26,15 +26,50 @@ import { store } from "./store";
 import { io } from "socket.io-client";
 
 const app = createApp(App).use(IonicVue).use(router).use(store);
-// Load settings before mounting
+
+const handleSocketEvents = (ioClient) => {
+  ioClient.on("all", (data) => {
+    const parsedData = JSON.parse(data);
+    // Downloading list
+    store.commit(
+      "metube/setDownloadingList",
+      parsedData[0].map((el) => el[1])
+    );
+
+    // Completed list
+    store.commit(
+      "metube/setCompletedList",
+      parsedData[1].map((el) => el[1])
+    );
+  });
+
+  ioClient.on("added", (data) => {
+    store.commit("metube/addToDownloadingList", JSON.parse(data));
+  });
+
+  ioClient.on("canceled", (data) => {
+    store.commit("metube/removeFromDownloadingList", JSON.parse(data));
+  });
+
+  ioClient.on("updated", (data) => {
+    store.commit("metube/updateDownloadingEntry", JSON.parse(data));
+  });
+
+  ioClient.on("completed", (data) => {
+    const parsedData = JSON.parse(data);
+    store.commit("metube/removeFromDownloadingList", parsedData.id);
+    store.commit("metube/addToCompletedList", parsedData);
+  });
+};
+
 store.dispatch("settings/loadSettings").then(() => {
   // Toggle dark-mode
   if (store.getters["settings/nightmode"]) document.body.classList.add("dark");
   // Socket IO connection
-  app.config.globalProperties.$socketIOClient = io(
-    store.getters["settings/serverURL"]
-  );
-
+  if (store.getters["settings/serverURL"]) {
+    const ioClient = io(store.getters["settings/serverURL"]);
+    handleSocketEvents(ioClient);
+  }
   router.isReady().then(() => {
     app.mount("#app");
   });

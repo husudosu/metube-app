@@ -75,15 +75,29 @@
             ></ion-progress-bar>
             <b>ETA:</b> {{ humanReadableTime(item.eta) }} | <b>Speed:</b>
             {{ humanReadableSpeed(item.speed) }}<br />
-            <!-- <ion-button size="small" fill="none">
+            <ion-button
+              size="small"
+              fill="none"
+              @click="onDeleteClicked(item, 'queue')"
+            >
               <ion-icon :icon="trashBinSharp" slot="icon-only"></ion-icon>
-            </ion-button> -->
+            </ion-button>
           </ion-label>
         </ion-item>
         <ion-item v-if="downloadingList.length == 0">Empty</ion-item>
         <ion-list-header>Completed</ion-list-header>
         <ion-item v-for="item in completedList" :key="item.id">
-          <ion-label>{{ item.title }}</ion-label>
+          <ion-label>
+            {{ item.title }}
+            <br />
+            <ion-button
+              size="small"
+              fill="none"
+              @click="onDeleteClicked(item, 'done')"
+            >
+              <ion-icon :icon="trashBinSharp" slot="icon-only"></ion-icon>
+            </ion-button>
+          </ion-label>
         </ion-item>
         <ion-item v-if="completedList.length == 0">Empty</ion-item>
       </ion-list>
@@ -133,6 +147,10 @@ import { Http } from "@capacitor-community/http";
 import { QUALITY, FORMAT } from "../properties";
 import { computed } from "@vue/runtime-core";
 import { humanReadableSpeed, humanReadableTime } from "../utils";
+
+// Android 7.0 Webview cannot join URL properly so we have to use a third party library for that.
+import urlJoin from "url-join";
+
 export default {
   components: {
     IonPage,
@@ -167,7 +185,9 @@ export default {
     const addURL = async () => {
       isOpenModalShown.value = false;
       const resp = await Http.post({
-        url: new URL("add", store.getters["settings/serverURL"]),
+        // url: new URL("add", store.getters["settings/serverURL"]),
+        url: urlJoin(store.getters["settings/serverURL"], "add"),
+        headers: { "Content-Type": "application/json" },
         data: {
           quality: openModalQuality.value,
           format: openModalFormat.value,
@@ -179,6 +199,24 @@ export default {
       openModalURL.value = "";
       openModalQuality.value = store.getters["settings/defaultQuality"];
       openModalFormat.value = store.getters["settings/defaultFormat"];
+    };
+
+    const onDeleteClicked = async (item, where) => {
+      const resp = await Http.post({
+        // url: new URL("delete", store.getters["settings/serverURL"]),
+        url: urlJoin(store.getters["settings/serverURL"], "delete"),
+        headers: { "Content-Type": "application/json" },
+        data: {
+          where,
+          ids: [item.id],
+        },
+      });
+      // Remove from store too.
+      if (JSON.parse(resp.data).status == "ok") {
+        if (where === "queue")
+          store.commit("metube/removeFromDownloadingList", item.id);
+        else store.commit("metube/removeFromCompletedList", item.id);
+      }
     };
 
     return {
@@ -195,6 +233,7 @@ export default {
       trashBinSharp,
       humanReadableSpeed,
       humanReadableTime,
+      onDeleteClicked,
     };
   },
 };

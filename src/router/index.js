@@ -13,6 +13,10 @@ const routes = [
     path: "/folder/downloads",
     component: () => import("../views/DownloadsView.vue"),
   },
+  {
+    path: "/folder/about",
+    component: () => import("../views/AboutView.vue"),
+  },
 ];
 
 const router = createRouter({

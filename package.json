@@ -20,8 +20,10 @@
         "@capacitor/storage": "^1.2.5",
         "@ionic/vue": "^6.0.0",
         "@ionic/vue-router": "^6.0.0",
+        "com-darryncampbell-cordova-plugin-intent": "^2.2.0",
         "core-js": "^3.6.5",
         "socket.io-client": "^4.5.1",
+        "url-join": "^5.0.0",
         "vue": "^3.2.21",
         "vue-router": "^4.0.12",
         "vuex": "^4.0.2"

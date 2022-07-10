@@ -30,6 +30,64 @@
               </ion-item>
             </ion-menu-toggle>
           </ion-list>
+          <!-- Open URL modal !-->
+          <ion-modal :is-open="isOpenModalShown">
+            <ion-header>
+              <ion-toolbar>
+                <ion-buttons slot="start">
+                  <ion-button @click="closeModal">Cancel</ion-button>
+                </ion-buttons>
+                <ion-title>Open URL</ion-title>
+                <ion-buttons slot="end">
+                  <ion-button :strong="true" color="success" @click="addURL"
+                    >Open</ion-button
+                  >
+                </ion-buttons>
+              </ion-toolbar>
+            </ion-header>
+            <ion-content class="ion-padding">
+              <ion-item lines="full">
+                <ion-label position="floating">URL</ion-label>
+                <ion-input
+                  ref="input"
+                  type="url"
+                  placeholder="URL"
+                  v-model="openModalURL"
+                ></ion-input>
+              </ion-item>
+              <ion-item lines="full">
+                <ion-label position="floating">Quality</ion-label>
+                <ion-select
+                  v-model="openModalQuality"
+                  :value="openModalQuality"
+                >
+                  <ion-select-option :value="QUALITY.BEST"
+                    >Best</ion-select-option
+                  >
+                  <ion-select-option :value="QUALITY.QHD"
+                    >1440p</ion-select-option
+                  >
+                  <ion-select-option :value="QUALITY.FULLHD"
+                    >1080p</ion-select-option
+                  >
+                  <ion-select-option :value="QUALITY.HD"
+                    >720p</ion-select-option
+                  >
+                  <ion-select-option :value="QUALITY.NTSC"
+                    >480p</ion-select-option
+                  >
+                </ion-select>
+              </ion-item>
+              <ion-item lines="full">
+                <ion-label position="floating">Format</ion-label>
+                <ion-select v-model="openModalFormat" :value="openModalFormat">
+                  <ion-select-option :value="FORMAT.ANY">Any</ion-select-option>
+                  <ion-select-option :value="FORMAT.MP4">MP4</ion-select-option>
+                  <ion-select-option :value="FORMAT.MP3">MP3</ion-select-option>
+                </ion-select>
+              </ion-item>
+            </ion-content>
+          </ion-modal>
         </ion-content>
       </ion-menu>
       <ion-router-outlet id="main-content"></ion-router-outlet>
@@ -51,9 +109,20 @@ import {
   IonNote,
   IonRouterOutlet,
   IonSplitPane,
+  IonModal,
+  IonInput,
+  IonSelect,
+  IonSelectOption,
+  IonButtons,
+  IonButton,
+  IonTitle,
+  IonToolbar,
+  IonHeader,
+  getPlatforms,
 } from "@ionic/vue";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, computed } from "vue";
 import { useRoute } from "vue-router";
+import { useStore } from "vuex";
 import {
   heartOutline,
   heartSharp,
@@ -62,7 +131,11 @@ import {
   settingsOutline,
   settingsSharp,
 } from "ionicons/icons";
+import { Http } from "@capacitor-community/http";
+import urlJoin from "url-join";
 
+import { QUALITY, FORMAT, AndroindIntentActions } from "./properties";
+// Android 7.0 Webview cannot join URL properly so we have to use a third party library for that.
 export default defineComponent({
   name: "App",
   components: {
@@ -78,8 +151,20 @@ export default defineComponent({
     IonNote,
     IonRouterOutlet,
     IonSplitPane,
+    IonModal,
+    IonInput,
+    IonSelect,
+    IonSelectOption,
+    IonButtons,
+    IonButton,
+    IonTitle,
+    IonToolbar,
+    IonHeader,
   },
   setup() {
+    const route = useRoute();
+    const store = useStore();
+    const platforms = getPlatforms();
     const selectedIndex = ref(0);
     const appPages = [
       {
@@ -102,6 +187,11 @@ export default defineComponent({
       },
     ];
 
+    // Open URL Modal
+    const openModalURL = ref("");
+    const openModalQuality = ref(store.getters["settings/defaultQuality"]);
+    const openModalFormat = ref(store.getters["settings/defaultFormat"]);
+
     const path = window.location.pathname.split("folder/")[1];
     if (path !== undefined) {
       selectedIndex.value = appPages.findIndex(
@@ -109,12 +199,83 @@ export default defineComponent({
       );
     }
 
-    const route = useRoute();
+    // Intent handling code
+    const initApp = async () => {
+      if (platforms.includes("hybrid")) {
+        console.log("Registering indent");
+        registerBroadcastReceiver();
+        window.plugins.intentShim.onIntent((intent) => {
+          handleIntent(intent);
+        });
+      }
+    };
+
+    const registerBroadcastReceiver = () => {
+      window.plugins.intentShim.registerBroadcastReceiver(
+        {
+          filterActions: [
+            "com.darryncampbell.cordova.plugin.broadcastIntent.ACTION",
+          ],
+        },
+        (intent) => {
+          //  Broadcast received
+          handleIntent(intent);
+        }
+      );
+    };
+
+    const handleSendIntent = async (intent) => {
+      console.log("Send intent");
+      store.commit("setIsOpenModalShown", true);
+      openModalURL.value = intent.clipItems[0].text;
+    };
+
+    const handleIntent = async (intent) => {
+      if (Object.prototype.hasOwnProperty.call(intent, "action")) {
+        switch (intent.action) {
+          case AndroindIntentActions.SEND:
+            handleSendIntent(intent);
+            break;
+          default:
+            break;
+        }
+      }
+    };
+    const closeModal = () => {
+      store.commit("setIsOpenModalShown", false);
+      openModalURL.value = "";
+      openModalQuality.value = store.getters["settings/defaultQuality"];
+      openModalFormat.value = store.getters["settings/defaultFormat"];
+    };
+
+    const addURL = async () => {
+      const resp = await Http.post({
+        url: urlJoin(store.getters["settings/serverURL"], "add"),
+        headers: { "Content-Type": "application/json" },
+        data: {
+          quality: openModalQuality.value,
+          format: openModalFormat.value,
+          url: openModalURL.value,
+        },
+      });
+      console.log(resp);
+      closeModal();
+    };
+
+    initApp();
 
     return {
       selectedIndex,
       appPages,
       isSelected: (url) => (url === route.path ? "selected" : ""),
+      QUALITY,
+      FORMAT,
+      addURL,
+      openModalURL,
+      openModalQuality,
+      openModalFormat,
+      isOpenModalShown: computed(() => store.state.isOpenModalShown),
+      closeModal,
     };
   },
 });

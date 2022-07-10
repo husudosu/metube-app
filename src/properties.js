@@ -11,3 +11,8 @@ export const FORMAT = {
   MP4: "mp4",
   MP3: "mp3",
 };
+
+export const AndroindIntentActions = {
+  SEND: "android.intent.action.SEND",
+  VIEW: "android.intent.action.VIEW",
+};

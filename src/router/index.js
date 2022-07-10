@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from "@ionic/vue-router";
 const routes = [
   {
     path: "",
-    redirect: "/folder/settings",
+    redirect: "/folder/downloads",
   },
   {
     path: "/folder/settings",

@@ -1,5 +1,11 @@
 <template>
   <ion-app>
+    <ion-toast
+      :is-open="toastShown"
+      :duration="toastDuration"
+      :message="toastMessage"
+      @didDismiss="closeModal"
+    ></ion-toast>
     <ion-split-pane content-id="main-content">
       <ion-menu content-id="main-content" type="overlay">
         <ion-content>
@@ -119,6 +125,7 @@ import {
   IonToolbar,
   IonHeader,
   getPlatforms,
+  IonToast,
 } from "@ionic/vue";
 import { defineComponent, ref, computed } from "vue";
 import { useRoute } from "vue-router";
@@ -132,10 +139,11 @@ import {
   settingsSharp,
 } from "ionicons/icons";
 import { Http } from "@capacitor-community/http";
+
+// Android 7.0 Webview cannot join URL properly so we have to use a third party library for that.
 import urlJoin from "url-join";
 
 import { QUALITY, FORMAT, AndroindIntentActions } from "./properties";
-// Android 7.0 Webview cannot join URL properly so we have to use a third party library for that.
 export default defineComponent({
   name: "App",
   components: {
@@ -160,6 +168,7 @@ export default defineComponent({
     IonTitle,
     IonToolbar,
     IonHeader,
+    IonToast,
   },
   setup() {
     const route = useRoute();
@@ -249,21 +258,43 @@ export default defineComponent({
     };
 
     const addURL = async () => {
-      const resp = await Http.post({
-        url: urlJoin(store.getters["settings/serverURL"], "add"),
-        headers: { "Content-Type": "application/json" },
-        data: {
-          quality: openModalQuality.value,
-          format: openModalFormat.value,
-          url: openModalURL.value,
-        },
-      });
-      console.log(resp);
-      closeModal();
+      try {
+        store.commit("setIsOpenModalShown", false);
+        const resp = await Http.post({
+          url: urlJoin(store.getters["settings/serverURL"], "add"),
+          headers: { "Content-Type": "application/json" },
+          connectTimeout: 3000,
+          data: {
+            quality: openModalQuality.value,
+            format: openModalFormat.value,
+            url: openModalURL.value,
+          },
+        });
+
+        closeModal();
+        if (JSON.parse(resp.data).status != "ok") {
+          store.commit("showToast", {
+            toastDuration: 3000,
+            toastMessage: `Error from metube server: ${JSON.parse(resp.data)}`,
+          });
+        }
+      } catch (err) {
+        console.log(err);
+        if (err.message === "SocketTimeoutException") {
+          store.commit("showToast", {
+            toastDuration: 3000,
+            toastMessage: "Cannot add link, probably the server not available.",
+          });
+        } else {
+          store.commit("showToast", {
+            toastDuration: 3000,
+            toastMessage: `Cannot add new link: ${err}`,
+          });
+        }
+      }
     };
 
     initApp();
-
     return {
       selectedIndex,
       appPages,
@@ -276,6 +307,14 @@ export default defineComponent({
       openModalFormat,
       isOpenModalShown: computed(() => store.state.isOpenModalShown),
       closeModal,
+      // Toast
+      toastShown: computed(() => store.state.toastShown),
+      toastDuration: computed(() => store.state.toastDuration),
+      toastMessage: computed(() => store.state.toastMessage),
+      closToast: () => {
+        store.commit("setToastShown", false);
+      },
+      socketConnected: computed(() => store.state.socketConnected),
     };
   },
 });

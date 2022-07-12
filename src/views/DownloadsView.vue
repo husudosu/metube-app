@@ -7,6 +7,9 @@
         </ion-buttons>
         <ion-title>Downloads</ion-title>
       </ion-toolbar>
+      <connection-state-toolbar
+        :socketConnected="socketConnected"
+      ></connection-state-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
@@ -54,7 +57,11 @@
         <ion-item v-if="completedList.length == 0">Empty</ion-item>
       </ion-list>
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button @click="onAddClicked" color="success">
+        <ion-fab-button
+          @click="onAddClicked"
+          :disabled="!socketConnected"
+          color="success"
+        >
           <ion-icon :icon="addSharp"></ion-icon>
         </ion-fab-button>
       </ion-fab>
@@ -89,6 +96,7 @@ import { Http } from "@capacitor-community/http";
 import { computed } from "@vue/runtime-core";
 import { humanReadableSpeed, humanReadableTime } from "../utils";
 
+import ConnectionStateToolbar from "../components/ConnectionStateToolbar";
 // Android 7.0 Webview cannot join URL properly so we have to use a third party library for that.
 import urlJoin from "url-join";
 
@@ -110,28 +118,48 @@ export default {
     IonList,
     IonListHeader,
     IonProgressBar,
+    ConnectionStateToolbar,
   },
   setup() {
     const store = useStore();
 
     const onAddClicked = () => {
-      console.log("Add clicked");
       store.commit("setIsOpenModalShown", true);
     };
     const onDeleteClicked = async (item, where) => {
-      const resp = await Http.post({
-        url: urlJoin(store.getters["settings/serverURL"], "delete"),
-        headers: { "Content-Type": "application/json" },
-        data: {
-          where,
-          ids: [item.id],
-        },
-      });
-      // Remove from store too.
-      if (JSON.parse(resp.data).status == "ok") {
-        if (where === "queue")
-          store.commit("metube/removeFromDownloadingList", item.id);
-        else store.commit("metube/removeFromCompletedList", item.id);
+      try {
+        const resp = await Http.post({
+          url: urlJoin(store.getters["settings/serverURL"], "delete"),
+          headers: { "Content-Type": "application/json" },
+          connectTimeout: 3000,
+          data: {
+            where,
+            ids: [item.id],
+          },
+        });
+        // Remove from store too.
+        if (JSON.parse(resp.data).status == "ok") {
+          if (where === "queue")
+            store.commit("metube/removeFromDownloadingList", item.id);
+          else store.commit("metube/removeFromCompletedList", item.id);
+        } else {
+          store.commit("showToast", {
+            toastDuration: 3000,
+            toastMessage: `Error from metube server: ${JSON.parse(resp.data)}`,
+          });
+        }
+      } catch (err) {
+        if (err.message === "SocketTimeoutException") {
+          store.commit("showToast", {
+            toastDuration: 3000,
+            toastMessage: "Cannot add link, probably the server not available.",
+          });
+        } else {
+          store.commit("showToast", {
+            toastDuration: 3000,
+            toastMessage: `Cannot add new link: ${err}`,
+          });
+        }
       }
     };
     return {
@@ -143,6 +171,7 @@ export default {
       humanReadableTime,
       onDeleteClicked,
       onAddClicked,
+      socketConnected: computed(() => store.state.socketConnected),
     };
   },
 };

@@ -60,6 +60,15 @@ const handleSocketEvents = (ioClient) => {
     store.commit("metube/removeFromDownloadingList", parsedData.id);
     store.commit("metube/addToCompletedList", parsedData);
   });
+
+  ioClient.on("connect", () => {
+    store.commit("setSocketConnected", true);
+  });
+
+  ioClient.on("disconnect", () => {
+    console.log("Disconnected");
+    store.commit("setSocketConnected", false);
+  });
 };
 
 store.dispatch("settings/loadSettings").then(() => {
